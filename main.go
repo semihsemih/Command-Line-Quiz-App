@@ -6,8 +6,14 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"strconv"
 	"strings"
 	"time"
+
+	_ "github.com/semihsemih/go-terminal-ui"
+	"github.com/semihsemih/go-terminal-ui/color"
+	"github.com/semihsemih/go-terminal-ui/font"
+	"github.com/semihsemih/go-terminal-ui/screen"
 )
 
 type Problem struct {
@@ -15,7 +21,13 @@ type Problem struct {
 	answer   string
 }
 
+func init() {
+	screen.ClearScreen()
+}
+
 func main() {
+	fmt.Println(font.Underline(color.BackgroundBrightCyan("______________Questions______________")))
+
 	csvFilename := flag.String("csv", "questions.csv", "a csv file in the format of 'question,answer'")
 	timeLimit := flag.Int("limit", 30, "the time limit for the quiz in seconds")
 	shuffleQuestions := flag.String("shuffle", "on", "Shuffle the order of the questions in each exam.")
@@ -23,14 +35,14 @@ func main() {
 
 	file, err := os.Open(*csvFilename)
 	if err != nil {
-		exit(fmt.Sprintf("Failed to open CSV file: %s\n", *csvFilename))
+		exit(fmt.Sprintf("%s: %s\n", color.BackgroundBrightRed("Failed to open CSV file: "), *csvFilename))
 	}
 	defer file.Close()
 
 	r := csv.NewReader(file)
 	lines, err := r.ReadAll()
 	if err != nil {
-		exit("Failed to parse the provided CSV file.")
+		exit(color.BackgroundBrightRed("Failed to parse the provided CSV file."))
 	}
 
 	problems := parseLines(lines)
@@ -44,7 +56,8 @@ func main() {
 
 problemLoop:
 	for index, problem := range problems {
-		fmt.Printf("Problem #%d: %s = ", index+1, problem.question)
+		fmt.Print(font.Bold("Problem #" + strconv.Itoa(index+1)))
+		fmt.Printf(" %s = ", problem.question)
 
 		answerChannel := make(chan string)
 
@@ -65,7 +78,9 @@ problemLoop:
 		}
 	}
 
-	fmt.Printf("\nYou scored %d out of %d\n", correct, len(problems))
+	fmt.Print(color.Green("\nYou scored " + strconv.Itoa(correct) + " out of " + strconv.Itoa(len(problems)) + "\n"))
+	screen.ToExitKeyPress()
+	screen.RestoreScreen()
 }
 
 func parseLines(lines [][]string) []Problem {
